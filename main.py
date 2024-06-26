@@ -29,6 +29,7 @@ def search_translating() -> dict:
                 translating_word['text'] = ""
                 translating_sex['text'] = ""
                 translating_sound['text'] = ""
+                error_label['text'] = ""
 
                 # Изменение текста в полях с характеристиками слова
                 if lang == "russian":
@@ -40,13 +41,55 @@ def search_translating() -> dict:
 
     # Отлавливатель слов, которых нет в базе данных
     except IndexError:
-        translating_word["text"] = "Данного слова нет в базе данных"
+        error_label["text"] = "Слова нет в словаре"
 
 
 # Функция для вывода всех слов и их перевода из базы данных
 def show_all_words() -> str:
-    print("Весь список слов с их переводом на русский в алфавитном порядке:")
-    return "SELECT french, russian, sex, sound FROM french_rus ORDER BY french"
+    def back():
+        show_all_words_frame.destroy()
+        scroll.destroy()
+
+    query = "SELECT french, russian, sex, sound FROM french_rus ORDER BY french"
+
+    # Отрисовка раздела для показа всех слов
+    show_all_words_frame = Frame(root, bg='white', padx=10, pady=5)
+    show_all_words_frame.place(relwidth=1, relheight=1)
+
+    # Кнопка для возврата к основному разделу
+    back_btn = Button(show_all_words_frame, bg="blue", font=100, text="Назад", command=lambda: back())
+    back_btn.place(x=0, y=0)
+
+    # Поле для отрисовки слов
+    words_cointainer = Text(show_all_words_frame, bg="silver", font=200, wrap=WORD, border=2, relief="solid", padx=10, pady=5)
+    words_cointainer.place(x=20, y=60, relwidth=0.95, relheight=0.85)
+
+    # Отрисовка слов
+
+    # Графический способ
+    # for i in range(1, 1001):
+    #     word = Label(text=f"{i}", bg="yellow", font=100, width=10, height=3)
+    #     words_cointainer.window_create(INSERT, window=word)
+
+    # Текстовый способ
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        result = cursor.fetchall()[::-1]
+        
+        # Заполнение поля словами
+        for i in result:
+           word = f"{i['french']}: {i['russian']}\n\n"
+           words_cointainer.insert(0.0, word)
+        
+        words_counter = Label(show_all_words_frame, bg="white", font=200, border=2, relief="solid", padx=8, pady=8, text=f"Количество слов: {len(result)}")
+        words_counter.place(x=250, y=0)
+
+    # Делает поле для слов неизменяемым
+    words_cointainer["state"] = "disabled"
+
+    scroll = Scrollbar(command=words_cointainer.yview)
+    scroll.pack(side=RIGHT, fill=Y)
+    words_cointainer.config(yscrollcommand = scroll.set)
 
 
 # Функция для добавления нового слов его перевода в базу данных 
@@ -116,6 +159,7 @@ try:
     
     
     # Отрисовка графического дизайна
+    # Оболочка графического дизайна
     root = Tk()
     root['bg'] = "white"
     root.title("Французско-русский переводчик")
@@ -123,43 +167,54 @@ try:
     root.geometry("800x600")
     root.resizable(width=False, height=False)
 
-    # Оболочка графического дизайна
-    frame = Frame(root, bg='white', padx=10, pady=5)
-    frame.place(relwidth=1, relheight=1)
+    # Секция для виджетов для перевода
+    translator_frame = Frame(root, bg='white', relief="solid", borderwidth=2, padx=10, pady=5)
+    translator_frame.place(x=5, y=5, relwidth=0.5, relheight=0.4)
 
     # Заголовок "Введите слово"
-    enter_word_label = Label(frame, text="Введите слово: ", bg='white', font=100)
+    enter_word_label = Label(translator_frame, text="Введите слово: ", bg='white', font=100)
     enter_word_label.place(x=0, y=0)
 
     # Поле ввода слова
-    word_input = Entry(frame, bg="white", font=100, border=1)
+    word_input = Entry(translator_frame, bg="white", font=100, border=1, relief="solid")
     word_input.place(x=160, y=0)
 
     # Кнопка перевода
-    translate_btn = Button(frame, text="Перевести", bg="green", font=100, command=search_translating)
+    translate_btn = Button(translator_frame, text="Перевести", bg="green", font=100, command=search_translating)
     translate_btn.place(x=0, y=50)
 
     # Характеристики слова
     # Заголовок "Перевод: "
-    translating_label = Label(frame, font=100, bg="white", text="Перевод: ")
+    translating_label = Label(translator_frame, font=100, bg="white", text="Перевод: ")
     translating_label.place(x=0, y=100)
     # Заголовок с переводом слова
-    translating_word = Label(frame, bg="white", font=100, text="")
+    translating_word = Label(translator_frame, bg="white", font=100, text="")
     translating_word.place(x=150, y=100)
 
     # Заголовок "Род: "
-    translating_label = Label(frame, font=100, bg="white", text="Род: ")
+    translating_label = Label(translator_frame, font=100, bg="white", text="Род: ")
     translating_label.place(x=0, y=130)
     # Заголовок с родом слова
-    translating_sex = Label(frame, bg="white", font=100, text="")
+    translating_sex = Label(translator_frame, bg="white", font=100, text="")
     translating_sex.place(x=150, y=130)
 
     # Заголовок "Произношение: "
-    translating_label = Label(frame, font=100, bg="white", text="Произношение: ")
+    translating_label = Label(translator_frame, font=100, bg="white", text="Произношение: ")
     translating_label.place(x=0, y=160)
     # Заголовок с произношением слова
-    translating_sound = Label(frame, bg="white", font=100, text="")
+    translating_sound = Label(translator_frame, bg="white", font=100, text="")
     translating_sound.place(x=150, y=160)
+
+    # Сообщение об ошибках
+    error_label = Label(translator_frame, bg="white", font=100, text="", fg="red")
+    error_label.place(x=130, y=55)
+    
+    # Секция для виджетов для других фунцкий
+    other_func_frame = Frame(root, bg='white', relief="solid", borderwidth=2, padx=10, pady=5)
+    other_func_frame.place(x=420, y=5, relwidth=0.45, relheight=0.4)
+
+    show_all_words_btn = Button(other_func_frame, text="Просмотреть весь словарь", bg="yellow", font=80, command=show_all_words)
+    show_all_words_btn.place(x=0, y=0)
 
     root.mainloop()
 
